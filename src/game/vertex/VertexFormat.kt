@@ -1,154 +1,115 @@
-package game.vertex;
+package game.vertex
 
-import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
+import game.vertex.VertexType.VERTEX_TYPE_F32
+import game.vertex.VertexType.VERTEX_TYPE_S8
+import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
+import org.lwjgl.opengl.GL20.glVertexAttribPointer
 
-public class VertexFormat
+class VertexFormat
 {
-	
-	public static class Entry
+	class Entry
 	{
-		VertexType type;
-		int index;
-		int count;
-		int offset;
-		boolean normalized;
-		
-		public int sizeof_bytes ()
-		{
-			return type.sizeof * count;
-		}
-	}
-	
+		var type: VertexType? = null
+		var index: Int = 0
+		var count: Int = 0
+		var offset: Int = 0
+		var normalized: Boolean = false
 
-	boolean building = false;
-	int size_bytes;
-	int element_count = 0;
-	
-	Entry[] entries = new Entry[12];
-	
-	public VertexFormat begin ()
-	{
-		if (building)
-			throw new RuntimeException("Vertex format already building!");
-		building = true;
-		size_bytes = 0;
-		element_count = 0;
-		return this;
+		fun sizeof_bytes () = type!!.get_size_bytes() * count
+		fun get_type ()  = type
+		fun get_index () = index
+		fun get_count () = count
+		fun get_byte_offset () = offset
+		fun is_normalized () = normalized
 	}
-	
-	public VertexFormat add_custom (VertexType type, int count, boolean normalized)
+
+
+	private var building: Boolean = false
+	private var size_bytes: Int = 0
+	private var element_count: Int = 0
+
+	private var entries: Array<Entry?> = arrayOfNulls(12)
+
+	fun begin(): VertexFormat
 	{
-		final Entry entry;
+		if (building) throw RuntimeException("Vertex format already building!")
+		building = true
+		size_bytes = 0
+		element_count = 0
+		return this
+	}
+
+	@JvmOverloads
+	fun add_custom (type: VertexType, count: Int, normalized: Boolean = false): VertexFormat
+	{
+		val entry: Entry?
 		if (entries[element_count] == null)
 		{
-			entries[element_count] = entry = new Entry();
+			entry = Entry()
+			entries[element_count] = entry
 		}
 		else
 		{
-			entry = entries[element_count];
+			entry = entries[element_count]
 		}
-		entry.index = element_count;
-		entry.type = type;
-		entry.offset = size_bytes;
-		entry.normalized = normalized;
-		entry.count = count;
-		
-		element_count++;
-		size_bytes += entry.sizeof_bytes();
-		return this;
+		entry!!.index = element_count
+		entry.type = type
+		entry.offset = size_bytes
+		entry.normalized = normalized
+		entry.count = count
+
+		element_count++
+		size_bytes += entry.sizeof_bytes()
+		return this
 	}
-	
-	public VertexFormat add_custom (VertexType type, int count)
-	{
-		return add_custom(type, count, false);
-	}
-	
-	
-	public VertexFormat add_float1 ()
-	{
-		return add_custom(VertexType.VERTEX_TYPE_F32, 1);
-	}
-	
-	public VertexFormat add_float2 ()
-	{
-		return add_custom(VertexType.VERTEX_TYPE_F32, 2);
-	}
-	
-	public VertexFormat add_float3 ()
-	{
-		return add_custom(VertexType.VERTEX_TYPE_F32, 3);
-	}
-	
-	public VertexFormat add_float4 ()
-	{
-		return add_custom(VertexType.VERTEX_TYPE_F32, 4);
-	}
-	
-	public VertexFormat add_position_2d ()
-	{
-		return add_float2();
-	}
-	
-	public VertexFormat add_position_3d ()
-	{
-		return add_float3();
-	}
-	
-	public VertexFormat add_normal ()
-	{
-		return add_float3();
-	}
-	
-	public VertexFormat add_texco ()
-	{
-		return add_float2();
-	}
-	
+
+
+	fun add_float1() = add_custom(VERTEX_TYPE_F32, 1)
+	fun add_float2() = add_custom(VERTEX_TYPE_F32, 2)
+	fun add_float3() = add_custom(VERTEX_TYPE_F32, 3)
+	fun add_float4() = add_custom(VERTEX_TYPE_F32, 4)
+
+	fun add_position_2d() = add_float2()
+	fun add_position_3d() = add_float3()
+
+	fun add_normal() = add_float3()
+
+	fun add_texco() = add_float2()
+
 	// This is mildly annoying >:/
 	// should be U8, but Java Stuff.
-	public VertexFormat add_colour4x8 ()
+	fun add_colour4x8() = add_custom(VERTEX_TYPE_S8, 4, true)
+	fun add_colour3x8() = add_custom(VERTEX_TYPE_S8, 3, true)
+
+	fun end ()
 	{
-		return add_custom(VertexType.VERTEX_TYPE_S8, 4, true);
+		if (!building) throw RuntimeException("Vertex format isn't building!")
+		building = false
 	}
-	
-	public VertexFormat add_colour3x8 ()
+
+	fun enable_attrib_array ()
 	{
-		return add_custom(VertexType.VERTEX_TYPE_S8, 3, true);
-	}
-	
-	public void end ()
-	{
-		if (!building)
-			throw new RuntimeException("Vertex format isn't building!");
-		building = false;
-	}
-	
-	public void enable_attrib_array ()
-	{
-		for (var i = 0; i < element_count; i++)
+		for (i in 0..<element_count)
 		{
-			final var entry = entries[i];
-			final var ei = entry.index;
+			val entry = entries[i]
+			val ei = entry!!.index
 			glVertexAttribPointer(
 				ei,
 				entry.count,
-				entry.type.gl,
+				entry.type!!.get_gl_type(),
 				entry.normalized,
 				size_bytes,
-				entry.offset
-			);
-			glEnableVertexAttribArray(ei);
+				entry.offset.toLong()
+			)
+			glEnableVertexAttribArray(ei)
 		}
 	}
-	
-	public int get_size_bytes ()
+
+	fun get_element_count () = element_count
+
+	fun get_size_bytes () = size_bytes
+
+	fun destroy()
 	{
-		return size_bytes;
-	}
-	
-	public void destroy ()
-	{
-	
 	}
 }
