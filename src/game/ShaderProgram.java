@@ -19,7 +19,7 @@ public class ShaderProgram
 	static final String
 	COMPILE_ERROR_PROBLEM_STR = "Shader \"%s\" had an error compiling at %s stage with status %d; Info:\n%s";
 	
-	public int sh_program;
+	public int name;
 	
 	private ShaderProgram ()
 	{
@@ -27,7 +27,7 @@ public class ShaderProgram
 
 	public void use ()
 	{
-		glUseProgram(sh_program);
+		glUseProgram(name);
 	}
 
 	public void unuse ()
@@ -37,23 +37,8 @@ public class ShaderProgram
 
 	public void destroy ()
 	{
-		glDeleteProgram(sh_program);
-		sh_program = 0;
-	}
-
-	public int get_uniform_location (CharSequence name)
-	{
-		return glGetUniformLocation(sh_program, name);
-	}
-	
-	public int get_uniform_block_index (CharSequence name)
-	{
-		return glGetUniformBlockIndex(sh_program, name);
-	}
-	
-	public void set_uniform_block_binding (CharSequence name, int index)
-	{
-		glUniformBlockBinding(sh_program, get_uniform_block_index(name), 0);
+		glDeleteProgram(name);
+		name = 0;
 	}
 	
 	static int create_and_compile (String source, int shader_type, String asset_name, String stage_name)
@@ -74,7 +59,7 @@ public class ShaderProgram
 	throws IOException
 	{
 		final var outs = new ShaderProgram();
-		outs.sh_program = glCreateProgram();
+		outs.name = glCreateProgram();
 		
 		final var sh_v_source = SHADER_V_PREAMBLE+Files.readString(Path.of(SHADER_ROOT, assetName+".vertex.glsl"));
 		final var sh_v_id = create_and_compile(sh_v_source, GL_VERTEX_SHADER, assetName, "vertex");
@@ -82,9 +67,9 @@ public class ShaderProgram
 		final var sh_f_source = SHADER_F_PREAMBLE+Files.readString(Path.of(SHADER_ROOT, assetName+".fragment.glsl"));
 		final var sh_f_id = create_and_compile(sh_f_source, GL_FRAGMENT_SHADER, assetName, "fragment");
 
-		glAttachShader(outs.sh_program, sh_v_id);
-		glAttachShader(outs.sh_program, sh_f_id);
-		glLinkProgram(outs.sh_program);
+		glAttachShader(outs.name, sh_v_id);
+		glAttachShader(outs.name, sh_f_id);
+		glLinkProgram(outs.name);
 		
 		glDeleteShader(sh_v_id);
 		glDeleteShader(sh_f_id);
@@ -95,5 +80,6 @@ public class ShaderProgram
 	{
 		return glGetInteger(GL_MAX_VERTEX_ATTRIBS);
 	}
+
 
 }

@@ -24,9 +24,9 @@ class VertexFormat
 	}
 
 
-	private var building: Boolean = false
-	private var size_bytes: Int = 0
-	private var element_count: Int = 0
+	private var building = false
+	private var size_bytes = 0
+	private var element_count = 0
 
 	private var entries: Array<Entry?> = arrayOfNulls(12)
 
@@ -63,23 +63,8 @@ class VertexFormat
 		return this
 	}
 
-
-	fun add_float1() = add_custom(VERTEX_TYPE_F32, 1)
-	fun add_float2() = add_custom(VERTEX_TYPE_F32, 2)
-	fun add_float3() = add_custom(VERTEX_TYPE_F32, 3)
-	fun add_float4() = add_custom(VERTEX_TYPE_F32, 4)
-
-	fun add_position_2d() = add_float2()
-	fun add_position_3d() = add_float3()
-
-	fun add_normal() = add_float3()
-
-	fun add_texco() = add_float2()
-
-	// This is mildly annoying >:/
-	// should be U8, but Java Stuff.
-	fun add_colour4x8() = add_custom(VERTEX_TYPE_S8, 4, true)
-	fun add_colour3x8() = add_custom(VERTEX_TYPE_S8, 3, true)
+	@JvmOverloads
+	fun add_float (count:Int=1) = add_custom(VERTEX_TYPE_F32, count)
 
 	fun end ()
 	{

@@ -1,6 +1,5 @@
 package game;
 
-import game.vertex.VertexFormat;
 import org.joml.Matrix4f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -10,6 +9,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.io.IOException;
 
 import static game.Mth.clamp_symd;
+import static game.drawshit.SHaderShit.*;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -17,6 +17,8 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL31.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+
+import static game.drawshit.VertexFormatShit.*;
 
 public class Main
 {
@@ -112,20 +114,18 @@ public class Main
 	
 	void run_loop () throws IOException
 	{
-		final var sh_program = ShaderProgram.load("test");
+		final var sh_program = shader_load("test");
 		
 		var vbo = new GLBuffer(GL_ARRAY_BUFFER);
 		var vao = new GLVertexArray();
 		var ebo = new GLBuffer(GL_ELEMENT_ARRAY_BUFFER);
-		var vf = new VertexFormat();
+		vertex_format_begin();
+		vertex_format_add_position_3d();
+		vertex_format_add_colour4x8();
+		vertex_format_add_texco();
+		final var vf = vertex_format_end();
+		
 		{
-			vf
-			.begin()
-			.add_position_3d()
-			.add_colour4x8()
-			.add_texco()
-			.end();
-			
 			final float xsz = tex.wide * 0.5f;
 			final float ysz = tex.tall * 0.5f;
 			
@@ -194,7 +194,7 @@ public class Main
 		final var MATRIX_TEMP_BYTES = MATRIX_TEMP_SIZE * Float.BYTES;
 		final var MATRIX_TEMP = MemoryUtil.memAllocFloat(MATRIX_TEMP_SIZE);
 		{
-			sh_program.set_uniform_block_binding("MATRIX", 0);
+			shader_set_uniform_block_binding(sh_program, "MATRIX", 0);
 			matrix_buffer.bind();
 			glBufferData(matrix_buffer.target, MATRIX_TEMP_BYTES, GL_DYNAMIC_DRAW);
 			glBindBufferRange(matrix_buffer.target, 0, matrix_buffer.name, 0, MATRIX_TEMP_BYTES);
@@ -241,10 +241,10 @@ public class Main
 				
 				tex.bind();
 				glPushAttrib(GL_ALL_ATTRIB_BITS);
-				sh_program.use();
+				shader_set(sh_program);
 				ebo.bind();
 				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-				sh_program.unuse();
+				shader_reset();
 				glPopAttrib();
 				
 			}
@@ -253,10 +253,11 @@ public class Main
 		}
 		
 		MemoryUtil.memFree(MATRIX_TEMP);
+		vertex_format_delete(vf);
+		shader_delete(sh_program);
 		vbo.destroy();
 		ebo.destroy();
 		vao.destroy();
-		sh_program.destroy();
 		matrix_buffer.destroy();
 	}
 	
